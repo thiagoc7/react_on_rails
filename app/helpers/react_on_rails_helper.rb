@@ -133,6 +133,9 @@ module ReactOnRailsHelper
   def server_rendered_react_component_html(options, props, react_component_name, dom_id)
     return ["", ""] unless prerender(options)
 
+    # On server `location` option is added (`location = request.fullpath`)
+    # React Router needs this to match the current route
+
     # Make sure that we use up-to-date server-bundle
     ReactOnRails::ServerRenderingPool.reset_pool_if_server_bundle_was_modified
 
@@ -147,7 +150,8 @@ module ReactOnRailsHelper
     domId: '#{dom_id}',
     props: props,
     trace: #{trace(options)},
-    generatorFunction: #{generator_function(options)}
+    generatorFunction: #{generator_function(options)},
+    location: '#{request.fullpath}'
   });
 })()
     JS

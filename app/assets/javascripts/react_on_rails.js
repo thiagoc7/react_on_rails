@@ -8,13 +8,47 @@
     var props = options.props;
     var trace = options.trace;
     var generatorFunction = options.generatorFunction;
+    var location = options.location;
 
     var htmlResult = '';
     var consoleReplay = '';
 
     try {
+
+                // JG: this is not necessarily going return a reactElement
+          // We might get back object like { pathname, search, hash, state }, and a generator function, then we know
+          // that we need to redirect, and allow the developer to provide a calback.
+
+
+          // So we'll be doing window.location to the correct path, computed from the pathname, hash, search.
+
+          // OR we can call the specified callback if there's a redirect.
+
+
+          // We add a configuration, like the componentName: https://github.com/shakacode/react_on_rails#rails-view-helpers-in-depth
+          // call the option: react_router_redirect_callback which takes the name of the server globally exposed
+          // handler. The global function must have the form of:
+          // myReactRouterServerCallback(routeRedirect)
+          // routeRedirect is defined as containing:
+
+    //       routeRedirect: {
+    //         pathname: "Path <String>",
+    //         search: "Query <String>",
+    //         hash: "Hash <string>",
+    //         state: "Custom State <Object>",  // this is what you setup to cause the redirect,
+    //         ...other stuff from reactRouter
+    //        }
+    //       redirectTo = routeRedirect.pathname + routeRedirect.search
+
+// If the configuration is not provided, we simply do a window.location = path, as described above.
+
+          // otherwise, we call this this code (no redirect)
+
+
+
+
       var reactElement = createReactElement(componentName, props,
-        domId, trace, generatorFunction);
+        domId, trace, generatorFunction, location);
       htmlResult = provideServerReact().renderToString(reactElement);
     }
     catch (e) {
@@ -26,6 +60,14 @@
     }
 
     consoleReplay = ReactOnRails.buildConsoleReplay();
+
+    // the 2nd param is no longer just the consoleReplay, it's js and could be set by the router redirect!
+
+
+
+    // the 2nd param is no longer just the consoleReplay, it's js and could be set by the router redirect!
+
+
     return JSON.stringify([htmlResult, consoleReplay]);
   };
 
@@ -150,13 +192,13 @@
     }
   };
 
-  function createReactElement(componentName, props, domId, trace, generatorFunction) {
+  function createReactElement(componentName, props, domId, trace, generatorFunction, location) {
     if (trace) {
       console.log('RENDERED ' + componentName + ' to dom node with id: ' + domId);
     }
 
     if (generatorFunction) {
-      return this[componentName](props);
+      return this[componentName](props, location);
     } else {
       return React.createElement(this[componentName], props);
     }
