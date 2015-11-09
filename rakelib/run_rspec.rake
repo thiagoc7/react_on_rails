@@ -51,8 +51,8 @@ private
 def run_tests_in(dir, options = {})
   dir = Pathname.new(File.join(gem_root, dir)) if dir.is_a?(String)
   command_name = options.fetch(:command_name, dir.basename)
+  env_variables = options.fetch(:env_variables, "")
   rspec_args = options.fetch(:rspec_args, "")
-  env_variables = %(COVERAGE=true TEST_ENV_COMMAND_NAME="#{command_name}")
-  env_variables << options.fetch(:env_variables, "")
+  env_variables << %( COVERAGE=true TEST_ENV_COMMAND_NAME="#{command_name}")
   sh %(cd #{dir} && #{env_variables} rspec #{rspec_args})
 end
