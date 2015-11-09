@@ -8,9 +8,6 @@ rvm:
 services:
   - docker
 
-gemfile:
-  - spec/dummy/Gemfile
-
 env:
   - export RAILS_ENV=test
 
