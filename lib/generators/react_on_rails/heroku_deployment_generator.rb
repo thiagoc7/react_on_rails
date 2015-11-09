@@ -14,7 +14,7 @@ module ReactOnRails
       end
 
       def add_heroku_production_gems
-        production_gems = "\n# For Heroku deployment\ngem 'rails_12factor', group: :production\n"
+        production_gems = "\n\n# For Heroku deployment\ngem 'rails_12factor', group: :production\n"
         append_to_file("Gemfile", production_gems)
       end
     end
