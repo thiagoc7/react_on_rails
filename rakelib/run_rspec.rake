@@ -11,12 +11,12 @@ namespace :run_rspec do
 
   desc "Run RSpec for spec/dummy only"
   task :dummy do
-    run_tests_in("spec/dummy", env_variables: "DRIVER=selenium_firefox")
+    run_tests_in("spec/dummy", env_vars: "DRIVER=selenium_firefox")
   end
 
   desc "Run RSpec for spec/dummy_react_013 only"
   task :dummy_react_013 do
-    run_tests_in("spec/dummy-react-013", env_variables: "DRIVER=selenium_firefox")
+    run_tests_in("spec/dummy-react-013", env_vars: "DRIVER=selenium_firefox")
   end
 
   desc "Run RSpec for example apps only"
@@ -51,8 +51,7 @@ private
 def run_tests_in(dir, options = {})
   dir = Pathname.new(File.join(gem_root, dir)) if dir.is_a?(String)
   command_name = options.fetch(:command_name, dir.basename)
-  env_variables = options.fetch(:env_variables, "")
   rspec_args = options.fetch(:rspec_args, "")
-  env_variables << %( COVERAGE=true TEST_ENV_COMMAND_NAME="#{command_name}")
-  sh %(cd #{dir} && #{env_variables} bundle exec rspec #{rspec_args})
+  env_vars = %(#{options.fetch(env_vars, '')} COVERAGE=true TEST_ENV_COMMAND_NAME="#{command_name}")
+  bundle_exec(dir: dir, args: "rspec #{rspec_args}", env_vars: env_vars)
 end
