@@ -40,8 +40,8 @@ before_script:
 
 script:
   - rake
-  # - rake examples
-  # - rake run_rspec:examples
+  - rake examples
+  - rake run_rspec:examples
   - rake docker:lint
 
 notifications:
