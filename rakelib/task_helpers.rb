@@ -31,7 +31,7 @@ module ReactOnRails
       # end
       # sh_in_dir(dir, "bundle install --gemfile=Gemfile --system --no-deployment")
       # sh_in_dir(dir, "bundle install --gemfile=Gemfile --no-deployment")
-      sh_in_dir(dir, "bundle install --gemfile=Gemfile")
+      sh_in_dir(dir, "bundle install")
       # sh_in_dir(dir, "bundle install --gemfile=Gemfile --path=$GEM_HOME  --no-frozen  --no-deployment")
     end
 
