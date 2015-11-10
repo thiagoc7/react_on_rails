@@ -28,6 +28,13 @@ namespace :run_rspec do
     end
   end
 
+  task :examples do
+    Rake::Task["run_rspec:example_basic"].invoke
+    # Rake::Task["run_rspec:example_basic_server_rendering"].invoke
+    # Rake::Task["run_rspec:example_redux"].invoke
+    # Rake::Task["run_rspec:example_redux_server_rendering"].invoke
+  end
+
   desc "Run RSpec on spec/empty_spec in order to have SimpleCov generate a coverage report from cache"
   task :empty do
     sh %(COVERAGE=true rspec spec/empty_spec.rb)
@@ -35,7 +42,7 @@ namespace :run_rspec do
 
   Coveralls::RakeTask.new
 
-  task run_rspec: [:gem, :dummy, :dummy_react_013, :examples, :empty, "coveralls:push"] do
+  task run_rspec: [:gem, :dummy, :dummy_react_013, :empty, "coveralls:push"] do
     puts "Completed all RSpec tests"
   end
 end
