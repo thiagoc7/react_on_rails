@@ -31,6 +31,7 @@ install:
   - cd ../../dummy-react-013/client && npm install
   - $(npm bin)/webpack --config webpack.server.js
   - $(npm bin)/webpack --config webpack.client.js
+  - cd ../../../
   - docker-compose up lint
 
 before_script:
