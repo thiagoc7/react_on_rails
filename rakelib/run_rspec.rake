@@ -19,10 +19,11 @@ namespace :run_rspec do
     run_tests_in("spec/dummy-react-013", env_vars: "DRIVER=selenium_firefox")
   end
 
-  desc "Run RSpec for example apps only"
-  task :examples do
-    Dir.foreach(examples_dir) do |example_app_dir|
-      next if example_app_dir == "." || example_app_dir == ".."
+  # desc "Run RSpec for example apps only"
+  # task :examples do
+  Dir.foreach(examples_dir) do |example_app_dir|
+    next if example_app_dir == "." || example_app_dir == ".."
+    task "example_#{File.basename(example_app_dir)}" do
       run_tests_in("#{File.basename(examples_dir)}/#{File.basename(example_app_dir)}")
     end
   end

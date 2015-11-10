@@ -1,32 +1,18 @@
 require_relative "task_helpers"
 include ReactOnRails::TaskHelpers
 
-namespace :ci do
-  desc "Runs all tests and linting"
-  task run: [:run_rspec, :lint]
-
-  desc "Installs dependencies such as nvm and dummy app webpack bundles"
-  task :install do
-    # Install Node Version Manager and Node Version
-    # rm_rf("~/.nvm")
-    # sh_in_dir("~/", "git clone https://github.com/creationix/nvm.git")
-    # sh_in_dir("~/.nvm", "git checkout `git describe --abbrev=0 --tags`
-    #                      source ~/.nvm/nvm.sh
-    #                      nvm install #{node_version}")
-
-    # Install Node Package Manager
-    # npm(".", "install -g npm")
-
-    # Install Gem dependencies
-    # bundle_install_in(gem_root)
-
-    # Install dependencies for dummy apps
-    dummy_app_dirs.each do |dummy_app_dir|
-      dummy_app_dir = File.join(gem_root, dummy_app_dir)
-      shell_commands = "npm install
-                        npm run webpack --config webpack.server.js
-                        npm bin)/webpack --config webpack.client.js"
-      sh_in_dir(dummy_app_dir, shell_commands)
-    end
-  end
+task :ci do
+  Rake::Task["run_rspec:gem"].invoke
+  Rake::Task["dummy_apps:install_dummy_app"].invoke
+  Rake::Task["run_rspec:dummy"].invoke
+  Rake::Task["dummy_apps:install_dummy_react_013_app"].invoke
+  Rake::Task["run_rspec:dummy_react_013"].invoke
+  Rake::Task["examples:gen_basic"].invoke
+  Rake::Task["run_rspec:example_basic"].invoke
+  # Rake::Task["examples:gen_basic_server_rendering"].invoke
+  # Rake::Task["run_rspec:example_basic_server_rendering"].invoke
+  # Rake::Task["examples:gen_redux"].invoke
+  # Rake::Task["run_rspec:example_redux"].invoke
+  # Rake::Task["examples:gen_redux_server_rendering"].invoke
+  # Rake::Task["run_rspec:example_redux_server_rendering"].invoke
 end
