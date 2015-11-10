@@ -17,7 +17,10 @@ namespace :ci do
     # Install Node Package Manager
     npm(".", "install -g npm")
 
-    # Install Dependencies for Dummy Apps
+    # Install Gem dependencies
+    bundle_install_in(gem_root)
+
+    # Install dependencies for dummy apps
     dummy_app_dirs.each do |dummy_app_dir|
       dummy_app_dir = File.join(gem_root, dummy_app_dir)
       bundle_install_in(dummy_app_dir)
