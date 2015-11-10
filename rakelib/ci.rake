@@ -24,10 +24,9 @@ namespace :ci do
     dummy_app_dirs.each do |dummy_app_dir|
       dummy_app_dir = File.join(gem_root, dummy_app_dir)
       shell_commands = "npm install
-                        $(npm bin)/webpack --config webpack.server.js
-                        $(npm bin)/webpack --config webpack.client.js"
-      dummy_app_client_dir = File.join(dummy_app_dir, "client")
-      sh_in_dir(dummy_app_client_dir, shell_commands)
+                        npm run webpack --config webpack.server.js
+                        npm bin)/webpack --config webpack.client.js"
+      sh_in_dir(dummy_app_dir, shell_commands)
     end
   end
 end
