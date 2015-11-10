@@ -27,20 +27,6 @@ module ReactOnRails
       sh_in_dir(dir, "bundle install --system")
     end
 
-    # Takes a directory relative to the application root and runs the given args
-    # with bundle exec. This uses a clean environment so other Gemfiles will not
-    # influence the current gems being used.
-    # TODO: check that this should be passed a rel instead of abs path
-    def bundle_exec(dir:, args:, env_vars: "")
-      # absolute_dir = File.join(gem_root, dir)
-      sh_in_dir(dir, "#{env_vars} bundle exec #{args}")
-      # Bundler.with_clean_env do
-      #   Dir.chdir "#{absolute_dir}" do
-      #     `#{env_vars} bundle exec #{args}`
-      #   end
-      # end
-    end
-
     # `dir` a directory containing a package.json file
     def build_webpack_bundles(dir:, server_rendering:)
       sh_in_dir(dir, "npm install")
