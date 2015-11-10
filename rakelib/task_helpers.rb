@@ -24,7 +24,13 @@ module ReactOnRails
     # which screws everything up since we have multiple Gemfiles in nested
     # directories.
     def bundle_install_in(dir)
-      sh_in_dir(dir, "bundle install --gemfile=Gemfile --no-deployment")
+      Bundler.with_clean_env do
+        Dir.chdir dir do
+          `bundle install --gemfile=Gemfile --system --no-deployment`
+        end
+      end
+      # sh_in_dir(dir, "bundle install --gemfile=Gemfile --system --no-deployment")
+      # sh_in_dir(dir, "bundle install --gemfile=Gemfile --no-deployment")
       # sh_in_dir(dir, "bundle install --gemfile=Gemfile --no-deployment")
       # sh_in_dir(dir, "bundle install --gemfile=Gemfile --path=$GEM_HOME  --no-frozen  --no-deployment")
     end
