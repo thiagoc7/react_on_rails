@@ -1,5 +1,7 @@
 require "rake/clean"
 
+require_relative "example_type"
+include ReactOnRails::ExampleType
 require_relative "task_helpers"
 include ReactOnRails::TaskHelpers
 
@@ -10,31 +12,20 @@ namespace :examples do
   # used as the folder name, and options will be given as arguments
   # to the generator.
   EXAMPLE_TYPES = [
-    { name: "basic", options: "" }]
+    ExampleType.new(name: "basic", generator_options: "")]
   #   { name: "basic", options: "" },
   #   { name: "basic-server-rendering", options: "--server-rendering" },
   #   { name: "redux", options: "--redux --server-rendering" },
   #   { name: "redux-server-rendering", options: "--redux --server-rendering" }
   # ]
 
-  # Gems we need to add to the Gemfile before bundle installing
-  REQUIRED_GEMS = [
-    "gem 'react_on_rails', path: '../../.'",
-    "gem 'therubyracer'"
-  ]
-
-  # Options we pass when running `rails new` from the command-line
-  RAILS_OPTIONS = "--skip-bundle --skip-spring --skip-git --skip-test-unit --skip-active-record"
-
   # Dynamically define tasks for generating each example type
   EXAMPLE_TYPES.each do |example_type|
     desc "Generates #{example_type[:name]} example. Pass 1 to also run npm install (defaults to false)"
     task "gen_#{example_type[:name]}" do
-      Rake::Task["examples:clean_#{example_type[:name]}"].invoke
-      example_type_dir = example_dir_for(example_type)
-
-      mkdir_p(example_type_dir)
-      sh_in_dir(examples_dir, "rails new #{example_type[:name]} #{RAILS_OPTIONS}")
+      Rake::Task["examples:clean_#{example_type.name}"].invoke
+      mkdir_p(example_type.dir)
+      sh_in_dir(examples_dir, "rails new #{example_type.name} #{example_type.rails_options}")
       append_to_gemfile_in(example_type_dir, REQUIRED_GEMS)
       bundle_install_in(example_type_dir)
       run_generator_for(example_type)
@@ -88,22 +79,9 @@ def append_to_gemfile_in(parent_dir, lines)
   File.open(gemfile, "w") { |f| f.puts(new_text) }
 end
 
-# Retrieves the directory of a given example_type
-def example_dir_for(example_type)
-  File.join(examples_dir, example_type[:name])
-end
-
 # Shell commands to install the example application AFTER `rails new` has been run
 def run_generator_for(example_type)
   shell_commands = "rails generate react_on_rails:install #{example_type[:options]}
                     rails generate react_on_rails:dev_tests #{example_type[:options]}"
   sh_in_dir(example_dir_for(example_type), shell_commands)
-end
-
-def client_dir_for(example_type)
-  File.join(example_dir_for(example_type), "client")
-end
-
-def server_rendering_enabled?(example_type)
-  example_type[:options].include?("--server-rendering")
 end

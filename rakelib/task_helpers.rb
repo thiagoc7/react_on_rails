@@ -24,7 +24,7 @@ module ReactOnRails
     # which screws everything up since we have multiple Gemfiles in nested
     # directories.
     def bundle_install_in(dir)
-      sh_in_dir(dir, "bundle install --system")
+      sh_in_dir(dir, "bundle install")
     end
 
     # `dir` a directory containing a package.json file
