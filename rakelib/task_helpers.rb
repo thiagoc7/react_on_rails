@@ -11,7 +11,7 @@ module ReactOnRails
     end
 
     def dummy_app_dirs
-      %w(spec/dummy/client spec/dummy-react-013)
+      %w(spec/dummy spec/dummy-react-013).map { |rel_dir| File.join(gem_root, rel_dir) }
     end
 
     # Executes a string of shell commands, one on each line, one at a time
@@ -24,7 +24,18 @@ module ReactOnRails
     # which screws everything up since we have multiple Gemfiles in nested
     # directories.
     def bundle_install_in(dir)
-      sh_in_dir(dir, "bundle install  --gemfile=Gemfile")
+      sh_in_dir(dir, "bundle install --gemfile=Gemfile --path=$GEM_HOME  --no-frozen")
+    end
+
+    # Runs bundle exec using that directory's Gemfile
+    def bundle_exec(dir:, args:, env_vars: "")
+      # TODO
+      # Bundler.with_clean_env do
+      #   Dir.chdir dir do
+      #     `#{env_vars} bundle exec #{args} --gemfile=Gemfile`
+      #   end
+      # end
+      sh_in_dir(dir, "#{env_vars} bundle exec #{args} --gemfile=Gemfile")
     end
 
     # `dir` a directory containing a package.json file
