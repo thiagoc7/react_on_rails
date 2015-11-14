@@ -19,20 +19,19 @@ namespace :run_rspec do
     run_tests_in("spec/dummy-react-013", env_vars: "DRIVER=selenium_firefox")
   end
 
-  # desc "Run RSpec for example apps only"
-  # task :examples do
-  Dir.foreach(examples_dir) do |example_app_dir|
-    next if example_app_dir == "." || example_app_dir == ".."
+  # Dynamically define Rake tasks for each example app found in the examples directory
+  example_app_dirs.each do |example_app_dir|
+    desc "Runs RSpec for #{File.basename(example_app_dir)} example app only"
     task "example_#{File.basename(example_app_dir)}" do
       run_tests_in("#{File.basename(examples_dir)}/#{File.basename(example_app_dir)}")
     end
   end
 
+  desc "Runs Rspec for examples only"
   task :examples do
-    Rake::Task["run_rspec:example_basic"].invoke
-    # Rake::Task["run_rspec:example_basic_server_rendering"].invoke
-    # Rake::Task["run_rspec:example_redux"].invoke
-    # Rake::Task["run_rspec:example_redux_server_rendering"].invoke
+    example_app_dirs.each do |example_app_dir|
+      Rake::Task["run_rspec:example_#{File.basename(example_app_dir)}"].invoke
+    end
   end
 
   desc "Run RSpec on spec/empty_spec in order to have SimpleCov generate a coverage report from cache"
@@ -42,7 +41,7 @@ namespace :run_rspec do
 
   Coveralls::RakeTask.new
 
-  task run_rspec: [:gem, :dummy, :dummy_react_013, :empty, "coveralls:push"] do
+  task run_rspec: [:gem, :dummy, :dummy_react_013, :examples, :empty, "coveralls:push"] do
     puts "Completed all RSpec tests"
   end
 end
@@ -62,4 +61,8 @@ def run_tests_in(dir, options = {})
   rspec_args = options.fetch(:rspec_args, "")
   env_vars = %(#{options.fetch(env_vars, '')} COVERAGE=true TEST_ENV_COMMAND_NAME="#{command_name}")
   sh_in_dir(dir, "#{env_vars} bundle exec rspec #{rspec_args}")
+end
+
+def example_app_dirs
+  Dir.foreach(examples_dir).reject { |dir| dir == "." || dir == ".." }
 end
