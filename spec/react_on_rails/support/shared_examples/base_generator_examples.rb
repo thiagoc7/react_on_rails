@@ -79,12 +79,6 @@ shared_examples "base_generator:base" do
        client/REACT_ON_RAILS_CLIENT_README.md).each { |file| assert_file(file) }
   end
 
-  it "removes coffee-script from Gemfile" do
-    assert_file("Gemfile") do |contents|
-      refute_match("# CoffeeScript\ngem 'coffee-rails'\n", contents)
-    end
-  end
-
   it "adds therubyracer to the Gemfile" do
     assert_file("Gemfile") do |contents|
       assert_match("gem 'therubyracer', platforms: :ruby", contents)
