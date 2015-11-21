@@ -123,6 +123,10 @@ module ReactOnRails
            client/package.json).each { |file| template(base_path + file + ".tt", file) }
       end
 
+      def add_base_gems_to_gemfile
+        append_to_file("Gemfile", "\ngem 'therubyracer', platforms: :ruby\n")
+      end
+
       def template_client_globals_file
         filename = options.server_rendering? ? "clientGlobals.jsx" : "globals.jsx"
         location = "client/app/bundles/HelloWorld/startup"

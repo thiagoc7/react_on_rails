@@ -94,7 +94,6 @@ We're definitely not doing that. With react_on_rails, webpack is mainly generati
   
   ```ruby
   gem "react_on_rails"
-  gem "therubyracer"
   ```
 
 2. Run the generator with a simple "Hello World" example:
