@@ -13,7 +13,9 @@
     "**/sample_generated/**",
     "**/coverage/**",
     "**/vendor/**",
-    "**/dummy-for-generators/**"
+    "**/dummy-for-generators/**",
+    "**/dummy/**",
+    "**/dummy-react-013/**"
   ],
   "esprima": "babel-jscs",
   "validateQuoteMarks": {
