@@ -41,6 +41,8 @@ Please see [Getting Started](#getting-started) for how to set up your Rails proj
     - [Building the Bundles](#building-the-bundles)
     - [Globally Exposing Your React Components](#globally-exposing-your-react-components)
     - [Rails View Helpers In-Depth](#rails-view-helpers-in-depth)
+    - [Redux](#redux)
+    - [React-Router](#react-router)
 + [Generator](#generator)
     - [Understanding the Organization of the Generated Client Code](#understanding-the-organization-of-the-generated-client-code)
     - [Redux](#redux)
@@ -194,6 +196,20 @@ This is how you actually render the React components you exposed to `window` ins
 + Currently the only option you may pass is `replay_console` (boolean)
 
 This is a helper method that takes any JavaScript expression and returns the output from evaluating it. If you have more than one line that needs to be executed, wrap it in an IIFE. JS exceptions will be caught and console messages handled properly.
+
+### Redux
+See examples of using a generator function to create the top level react-redux component.
+
+### React-Router
+There's no special instructions needed for react-router for client rendering.
+
+If you're server rendering with react-router, you'll need to use the option generator_function to return either:
+
+1. React Component
+2. Object (which we'll call the `routerResult`) with either the shape of:
+  `{ error, redirectLocation }`
+
+You should consult the docs for [react-router server rendering](https://github.com/rackt/react-router/blob/master/docs/guides/advanced/ServerRendering.md) as well as the example in the [React Webpack Rails Tutorial Code](https://github.com/shakacode/react-webpack-rails-tutorial) for how to do this.
 
 ## Generator
 The `react_on_rails:install` generator combined with the example pull requests of generator runs will get you up and running efficiently. There's a fair bit of setup with integrating Webpack with Rails.

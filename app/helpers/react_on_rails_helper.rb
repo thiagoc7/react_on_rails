@@ -32,7 +32,8 @@ module ReactOnRailsHelper
   #                    logs to browser. While this can make troubleshooting server rendering difficult,
   #                    so long as you have the default configuration of logging_on_server set to
   #                    true, you'll still see the errors on the server.
-  #    raise_on_prerender_error: <true/false> Default to false. True will raise exception on server if the JS code throws
+  #    raise_on_prerender_error: <true/false> Default to false. True will raise exception on server
+  #       if the JS code throws
   #  Any other options are passed to the content tag, including the id.
   def react_component(component_name, props = {}, options = {})
     # Create the JavaScript and HTML to allow either client or server rendering of the
@@ -76,7 +77,7 @@ module ReactOnRailsHelper
 
     content_tag_options = options.except(:generator_function, :prerender, :trace,
                                          :replay_console, :id, :react_component_name,
-                                         :server_side)
+                                         :server_side, :raise_on_prerender_error)
     content_tag_options[:id] = dom_id
 
     rendered_output = content_tag(:div,
@@ -86,8 +87,8 @@ module ReactOnRailsHelper
     # IMPORTANT: Ensure that we mark string as html_safe to avoid escaping.
     <<-HTML.html_safe
 #{component_specification_tag}
-    #{rendered_output}
-    #{replay_console(options) ? console_script : ''}
+#{rendered_output}
+#{replay_console(options) ? console_script : ''}
     HTML
   end
 
@@ -121,7 +122,6 @@ module ReactOnRailsHelper
   return JSON.stringify({
       html: htmlResult,
       consoleReplayScript: consoleReplayScript,
-      routerScript: '',
       hasErrors: hasErrors
   });
 
@@ -132,16 +132,14 @@ module ReactOnRailsHelper
 
     # IMPORTANT: To ensure that Rails doesn't auto-escape HTML tags, use the 'raw' method.
     html = result["html"]
-    consoleLogScript = result["consoleLogScript"]
-    routerScript = result["routerScript"]
-    hasErrors = result["hasErrors"]
-    raw("#{html}#{replay_console(options) ? consoleLogScript : '' }#{routerScript}")
-
+    console_log_script = result["consoleLogScript"]
+    raw("#{html}#{replay_console(options) ? console_log_script : ''}")
   rescue ExecJS::ProgramError => err
-
+    # rubocop:disable Style/RaiseArgs
     raise ReactOnRails::PrerenderError.new(component_name: "N/A (server_render_js called)",
                                            err: err,
                                            js_code: wrapper_js)
+    # rubocop:enable Style/RaiseArgs
   end
 
   private
@@ -181,30 +179,27 @@ module ReactOnRailsHelper
 
     result = ReactOnRails::ServerRenderingPool.server_render_js_with_console_logging(wrapper_js)
 
-    puts "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
-    puts "react_on_rails_helper.rb: #{__LINE__},  method: #{__method__}"
-    puts "result = #{result.ai}"
-    puts "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
-
-
     if result["hasErrors"] && raise_on_prerender_error(options)
       # We caught this exception on our backtrace handler
-      raise ReactOnRails::PrerenderError.new(component_name: react_component_name,
-                                             # Sanitize as this might be browser logged
-                                             props: sanitized_props_string(props),
-                                             err: nil,
-                                             js_code: wrapper_js,
-                                             console_messages: result["consoleReplayScript"],
-                                             router_script: result["routerScript"])
+      # rubocop:disable Style/RaiseArgs
+      fail ReactOnRails::PrerenderError.new(component_name: react_component_name,
+                                            # Sanitize as this might be browser logged
+                                            props: sanitized_props_string(props),
+                                            err: nil,
+                                            js_code: wrapper_js,
+                                            console_messages: result["consoleReplayScript"])
+      # rubocop:enable Style/RaiseArgs
     end
     result
   rescue ExecJS::ProgramError => err
     # This error came from execJs
+    # rubocop:disable Style/RaiseArgs
     raise ReactOnRails::PrerenderError.new(component_name: react_component_name,
                                            # Sanitize as this might be browser logged
                                            props: sanitized_props_string(props),
                                            err: err,
                                            js_code: wrapper_js)
+    # rubocop:enable Style/RaiseArgs
   end
 
   def raise_on_prerender_error(options)

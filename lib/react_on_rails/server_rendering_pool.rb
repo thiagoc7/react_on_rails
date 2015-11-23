@@ -24,27 +24,14 @@ module ReactOnRails
     # Returns a Hash:
     #   html: string of HTML for direct insertion on the page by evaluating js_code
     #   consoleReplayScript: script for replaying console
-    #   routerScript:
     #   hasErrors: true if server rendering errors
     # Note, js_code does not have to be based on React.
     # js_code MUST RETURN json stringify Object
     # Calling code will probably call 'html_safe' on return value before rendering to the view.
     def self.server_render_js_with_console_logging(js_code)
-      puts "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
-      puts "server_rendering_pool.rb: #{__LINE__},  method: #{__method__}"
-      puts "js_code is  = #{js_code.ai}"
-      puts "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
-
       trace_messsage(js_code)
-
       json_string = eval_js(js_code)
       result = JSON.parse(json_string)
-
-      puts "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
-      puts "server_rendering_pool.rb: #{__LINE__},  method: #{__method__}"
-      puts "result is  = #{result.ai}"
-      puts "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
-
 
       if ReactOnRails.configuration.logging_on_server
         console_script = result["consoleReplayScript"]

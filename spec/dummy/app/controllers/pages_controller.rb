@@ -4,16 +4,9 @@ class PagesController < ApplicationController
   rescue_from ReactOnRails::PrerenderError do |err|
     Rails.logger.error(err.message)
     Rails.logger.error(err.backtrace.join("\n"))
-    msg = <<-MSG
-CAUGHT: ReactOnRails::PrerenderError in PagesController!
-
-This is because raise_on_prerender_error was set to true.
-
-Here's what the exception contained (backtrace omitted):
-#{err.message[0..500]}
-  MSG
     redirect_to client_side_hello_world_path, flash: { error: "Error prerendering in react_on_rails. See server logs." }
   end
+
   # See files in spec/dummy/app/views/pages
 
   private

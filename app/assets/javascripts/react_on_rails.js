@@ -9,39 +9,32 @@
     var trace = options.trace;
     var generatorFunction = options.generatorFunction;
     var location = options.location;
-    var script;
     var htmlResult = '';
     var consoleReplay = '';
     var hasErrors = false;
 
     try {
-
-      // JG: this is not necessarily going return a reactElement
-      // We might get back object like { pathname, search, hash, state }, and a generator function, then we know
-      // that we need to redirect, and allow the developer to provide a calback.
-      // So we'll be doing window.location to the correct path, computed from the pathname, hash, search.
-      // OR we can call the specified callback if there's a redirect.
-
-      // We add a configuration, like the componentName: https://github.com/shakacode/react_on_rails#rails-view-helpers-in-depth
-      // call the option: react_router_redirect_callback which takes the name of the server globally exposed
-      // handler. The global function must have the form of:
-      // myReactRouterServerCallback(routeRedirect)
-      // routeRedirect is defined as containing:
-
-      //       routeRedirect: {
-      //         pathname: "Path <String>",
-      //         search: "Query <String>",
-      //         hash: "Hash <string>",
-      //         state: "Custom State <Object>",  // this is what you setup to cause the redirect,
-      //         ...other stuff from reactRouter
-      //        }
-      //       redirectTo = routeRedirect.pathname + routeRedirect.search
-      // If the configuration is not provided, we simply do a window.location = path, as described above.
-      // otherwise, we call this this code (no redirect)
-
-      var reactElement = createReactElement(componentName, props,
+      var reactElementOrRouterResult = createReactElementOrRouterResult(componentName, props,
         domId, trace, generatorFunction, location);
-      htmlResult = provideServerReact().renderToString(reactElement);
+      if (isRouterResult(reactElementOrRouterResult)) {
+
+        // We let the client side handle any redirect
+        // Set hasErrors in case we want to throw a Rails exception
+        hasErrors = !!reactElementOrRouterResult.routeError;
+        if (hasErrors) {
+          console.error("React Router ERROR: " +
+            JSON.stringify(reactElementOrRouterResult.routeError));
+        } else {
+          if (trace) {
+            redirectLocation = reactElementOrRouterResult.redirectLocation;
+            redirectPath = redirectLocation.pathname + redirectLocation.search;
+            console.log('ROUTER REDIRECT: ' + componentName + ' to dom node with id: ' + domId +
+              ', redirect to ' + redirectPath);
+          }
+        }
+      } else {
+        htmlResult = provideServerReact().renderToString(reactElementOrRouterResult);
+      }
     }
     catch (e) {
       hasErrors = true;
@@ -54,14 +47,10 @@
 
     consoleReplayScript = ReactOnRails.buildConsoleReplay();
 
-    reactRouterRedirect = ''; // TODO
-    routerScript = ReactOnRails.wrapInScriptTags(reactRouterRedirect);
-
     return JSON.stringify({
       html: htmlResult,
       consoleReplayScript: consoleReplayScript,
-      routerScript: routerScript,
-      hasErrors: hasErrors
+      hasErrors: hasErrors,
     });
   };
 
@@ -123,6 +112,7 @@
     if (!scriptBody) {
       return '';
     }
+
     return '\n<script>' + scriptBody + '\n</script>';
   };
 
@@ -136,6 +126,7 @@
           JSON.stringify(msg.arguments) + ');';
       });
     }
+
     return ReactOnRails.wrapInScriptTags(consoleReplay);
   };
 
@@ -146,11 +137,11 @@
     };
   }
 
-  function pageLoaded() {
+  function reactOnRailsPageLoaded() {
     forEachComponent(render);
   }
 
-  function pageUnloaded() {
+  function reactOnRailsPageUnloaded() {
     forEachComponent(unmount);
   }
 
@@ -175,9 +166,15 @@
     try {
       var domNode = document.getElementById(domId);
       if (domNode) {
-        var reactElement = createReactElement(componentName, props,
+        var reactElementOrRouterResult = createReactElementOrRouterResult(componentName, props,
           domId, trace, generatorFunction);
-        provideClientReact().render(reactElement, domNode);
+        if (isRouterResult(reactElementOrRouterResult)) {
+          throw new Error('You returned a server side type of react-router error: ' +
+            JSON.stringify(reactElementOrRouterResult) +
+            '\nYou should return a React.Component always for the client side entry point.');
+        } else {
+          provideClientReact().render(reactElementOrRouterResult, domNode);
+        }
       }
     }
     catch (e) {
@@ -189,7 +186,7 @@
     }
   };
 
-  function createReactElement(componentName, props, domId, trace, generatorFunction, location) {
+  function createReactElementOrRouterResult(componentName, props, domId, trace, generatorFunction, location) {
     if (trace) {
       console.log('RENDERED ' + componentName + ' to dom node with id: ' + domId);
     }
@@ -217,13 +214,18 @@
     return ReactDOMServer;
   }
 
+  function isRouterResult(reactElementOrRouterResult) {
+    return !!(reactElementOrRouterResult.redirectLocation ||
+    reactElementOrRouterResult.error);
+  }
+
   // Install listeners when running on the client.
   if (typeof document !== 'undefined') {
     if (!turbolinksInstalled) {
-      document.addEventListener('DOMContentLoaded', pageLoaded);
+      document.addEventListener('DOMContentLoaded', reactOnRailsPageLoaded);
     } else {
-      document.addEventListener('page:before-unload', pageUnloaded);
-      document.addEventListener('page:change', pageLoaded);
+      document.addEventListener('page:before-unload', reactOnRailsPageUnloaded);
+      document.addEventListener('page:change', reactOnRailsPageLoaded);
     }
   }
 }.call(this));
