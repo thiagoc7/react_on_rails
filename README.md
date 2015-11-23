@@ -181,8 +181,10 @@ This is how you actually render the React components you exposed to `window` ins
 + **options:**
   + **generator_function:** default is false, set to true if you want to use a generator function rather than a React Component. Why would you do this? For example, you may want the ability to use the passed-in props to initialize a redux store or setup react-router. Or you may want to return different components depending on what's in the props.
   + **prerender:** enable server-side rendering of component. Set to false when debugging!
+  + **router_redirect_callback:** Use this option if you want to provide a custom handler for redirects on server rendering. If you don't specify this, we'll simply change the rendered output to a script that sets window.location to the new route. Set this up exactly like a generator_function. Your function will will take one parameter, containing all the values that react-router gives on a redirect request, such as pathname, search, etc.
   + **trace:** set to true to print additional debugging information in the browser. Defaults to true for development, off otherwise.
   + **replay_console:** Default is true. False will disable echoing server-rendering logs to the browser. While this can make troubleshooting server rendering difficult, so long as you have the default configuration of logging_on_server set to true, you'll still see the errors on the server.
+  + **raise_on_prerender_error:** Default is false. True will throw an error on the server side rendering. Your controller will have to handle the error.
 + Any other options are passed to the content tag, including the id
 
 #### server_render_js

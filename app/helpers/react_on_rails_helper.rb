@@ -2,6 +2,7 @@
 # For any heredoc JS:
 # 1. The white spacing in this file matters!
 # 2. Keep all #{some_var} fully to the left so that all indentation is done evenly in that var
+require "react_on_rails/prerender_error"
 
 module ReactOnRailsHelper
   # react_component_name: can be a React component, created using a ES6 class, or
@@ -31,6 +32,7 @@ module ReactOnRailsHelper
   #                    logs to browser. While this can make troubleshooting server rendering difficult,
   #                    so long as you have the default configuration of logging_on_server set to
   #                    true, you'll still see the errors on the server.
+  #    raise_on_prerender_error: <true/false> Default to false. True will raise exception on server if the JS code throws
   #  Any other options are passed to the content tag, including the id.
   def react_component(component_name, props = {}, options = {})
     # Create the JavaScript and HTML to allow either client or server rendering of the
@@ -67,8 +69,10 @@ module ReactOnRailsHelper
                   })
 
     # Create the HTML rendering part
-    server_rendered_html, console_script =
-      server_rendered_react_component_html(options, props, react_component_name, dom_id)
+    result = server_rendered_react_component_html(options, props, react_component_name, dom_id)
+
+    server_rendered_html = result["html"]
+    console_script = result["consoleReplayScript"]
 
     content_tag_options = options.except(:generator_function, :prerender, :trace,
                                          :replay_console, :id, :react_component_name,
@@ -82,8 +86,8 @@ module ReactOnRailsHelper
     # IMPORTANT: Ensure that we mark string as html_safe to avoid escaping.
     <<-HTML.html_safe
 #{component_specification_tag}
-#{rendered_output}
-#{replay_console(options) ? console_script : ''}
+    #{rendered_output}
+    #{replay_console(options) ? console_script : ''}
     HTML
   end
 
@@ -98,7 +102,8 @@ module ReactOnRailsHelper
     wrapper_js = <<-JS
 (function() {
   var htmlResult = '';
-  var consoleReplay = '';
+  var consoleReplayScript = '';
+  var hasErrors = false;
 
   try {
     htmlResult =
@@ -108,17 +113,35 @@ module ReactOnRailsHelper
   } catch(e) {
     htmlResult = ReactOnRails.handleError({e: e, componentName: null,
       jsCode: '#{escape_javascript(js_expression)}', serverSide: true});
+    hasErrors = true;
   }
 
-  consoleReplay = ReactOnRails.buildConsoleReplay();
-  return JSON.stringify([htmlResult, consoleReplay]);
+  consoleReplayScript = ReactOnRails.buildConsoleReplay();
+
+  return JSON.stringify({
+      html: htmlResult,
+      consoleReplayScript: consoleReplayScript,
+      routerScript: '',
+      hasErrors: hasErrors
+  });
+
 })()
     JS
 
     result = ReactOnRails::ServerRenderingPool.server_render_js_with_console_logging(wrapper_js)
 
     # IMPORTANT: To ensure that Rails doesn't auto-escape HTML tags, use the 'raw' method.
-    raw("#{result[0]}#{replay_console(options) ? result[1] : ''}")
+    html = result["html"]
+    consoleLogScript = result["consoleLogScript"]
+    routerScript = result["routerScript"]
+    hasErrors = result["hasErrors"]
+    raw("#{html}#{replay_console(options) ? consoleLogScript : '' }#{routerScript}")
+
+  rescue ExecJS::ProgramError => err
+
+    raise ReactOnRails::PrerenderError.new(component_name: "N/A (server_render_js called)",
+                                           err: err,
+                                           js_code: wrapper_js)
   end
 
   private
@@ -131,7 +154,7 @@ module ReactOnRailsHelper
   # Returns Array [0]: html, [1]: script to console log
   # NOTE, these are NOT html_safe!
   def server_rendered_react_component_html(options, props, react_component_name, dom_id)
-    return ["", ""] unless prerender(options)
+    return { "html" => "", "consoleReplayScript" => "" } unless prerender(options)
 
     # On server `location` option is added (`location = request.fullpath`)
     # React Router needs this to match the current route
@@ -156,13 +179,36 @@ module ReactOnRailsHelper
 })()
     JS
 
-    ReactOnRails::ServerRenderingPool.server_render_js_with_console_logging(wrapper_js)
+    result = ReactOnRails::ServerRenderingPool.server_render_js_with_console_logging(wrapper_js)
+
+    puts "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
+    puts "react_on_rails_helper.rb: #{__LINE__},  method: #{__method__}"
+    puts "result = #{result.ai}"
+    puts "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
+
+
+    if result["hasErrors"] && raise_on_prerender_error(options)
+      # We caught this exception on our backtrace handler
+      raise ReactOnRails::PrerenderError.new(component_name: react_component_name,
+                                             # Sanitize as this might be browser logged
+                                             props: sanitized_props_string(props),
+                                             err: nil,
+                                             js_code: wrapper_js,
+                                             console_messages: result["consoleReplayScript"],
+                                             router_script: result["routerScript"])
+    end
+    result
   rescue ExecJS::ProgramError => err
-    raise ReactOnRails::ServerRenderingPool::PrerenderError.new(
-      react_component_name,
-      sanitized_props_string(props), # Sanitize as this might be browser logged
-      err
-    )
+    # This error came from execJs
+    raise ReactOnRails::PrerenderError.new(component_name: react_component_name,
+                                           # Sanitize as this might be browser logged
+                                           props: sanitized_props_string(props),
+                                           err: err,
+                                           js_code: wrapper_js)
+  end
+
+  def raise_on_prerender_error(options)
+    options.fetch(:raise_on_prerender_error) { ReactOnRails.configuration.raise_on_prerender_error }
   end
 
   def trace(options)
