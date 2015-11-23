@@ -71,6 +71,7 @@ module ReactOnRails
 
           // bootstrap-sprockets depends on generated/vendor-bundle for jQuery.
           //= require bootstrap-sprockets
+
         DATA
 
         app_js_path = "app/assets/javascripts/application.js"
@@ -78,7 +79,7 @@ module ReactOnRails
         if found_app_js
           prepend_to_file(found_app_js, data)
         else
-          create_file(app_js_path, data << "\n\n//= require turbolinks\n\n")
+          create_file(app_js_path, data)
         end
       end
 
